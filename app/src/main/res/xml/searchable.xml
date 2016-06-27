@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<searchable xmlns:android="http://schemas.android.com/apk/res/android"
+            android:label="@string/label_search"
+            android:hint="@string/hint_search"
+            android:searchSuggestIntentAction="android.intent.action.VIEW"
+            android:searchSuggestAuthority="com.example.lqy.stockalarm.contentProvider.StockProvider"
+            android:searchSuggestIntentData="content://com.example.lqy.stockalarm.contentProvider.StockProvider/stock"
+            android:searchSuggestSelection=" ?"
+            android:searchSuggestThreshold="1"
+            android:includeInGlobalSearch="true" />

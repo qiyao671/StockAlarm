@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">StockAlarm</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_search">Search</string>
+    <string name="action_menu">Menu</string>
+    <string name="hint_search">请输入要搜索的股票名称</string>
+    <string name="label_search">Search</string>
+    <string name="title_activity_stock">StockActivity</string>
+    <string name="title_activity_warn_setting">WarnSettingActivity</string>
+    <string name="title_activity_warn_settings">WarnSettingsActivity</string>
+</resources>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.example.lqy.stockalarm">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application
+            android:allowBackup="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
+            android:supportsRtl="true"
+            android:theme="@style/AppTheme">
+        <activity
+                android:name=".app.UserShareListActivity"
+                android:label="@string/app_name"
+                android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <activity
+                android:name=".app.SearchableStockActivity"
+                android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH"/>
+                <action android:name="android.intent.action.VIEW"/>
+            </intent-filter>
+
+            <meta-data
+                    android:name="android.app.searchable"
+                    android:resource="@xml/searchable"/>
+        </activity>
+        <activity
+                android:name=".app.StockActivity"
+                android:label="@string/title_activity_stock"
+                android:theme="@style/AppTheme.NoActionBar">
+        </activity>
+
+        <meta-data
+                android:name="android.app.default_searchable"
+                android:value=".app.SearchableStockActivity"/>
+
+        <provider
+                android:name=".contentProvider.StockProvider"
+                android:authorities="com.example.lqy.stockalarm.contentProvider.StockProvider"/>
+        <provider
+                android:name=".contentProvider.UserShareProvider"
+                android:authorities="com.example.lqy.stockalarm.contentProvider.UserShareProvider"/>
+
+        <activity
+                android:name=".app.WarnSettingsActivity"
+                android:label="@string/title_activity_warn_settings"
+                android:theme="@style/AppTheme.NoActionBar">
+        </activity>
+
+        <service
+                android:name=".Services.WarnService"
+                android:enabled="true"
+                android:exported="true">
+        </service>
+    </application>
+
+</manifest>
