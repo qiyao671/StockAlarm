@@ -43,13 +43,6 @@ public class SearchableStockActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        if(cursor != null)
-            cursor.close();
-    }
-
-    @Override
     protected void onNewIntent(Intent intent) {
         handleIntent(intent);
     }
@@ -61,18 +54,22 @@ public class SearchableStockActivity extends AppCompatActivity {
             startActivity(stockIntent);
             this.finish();
         } else if (intent.getAction().equals(Intent.ACTION_SEARCH)) {
-            ContentResolver contentResolver = getContentResolver();
-            Uri uri = StockProvider.CONTENT_URI;
-            cursor = contentResolver.query(uri, null, null, new String[]{intent.getStringExtra(SearchManager.QUERY)}, null);
-            if(cursor.getCount() > 0) {
-                cursorAdapter = new searchResultAdapter(SearchableStockActivity.this, R.layout.list_item_searchresult, cursor, new String[]{KEY_CODE, KEY_NAME}, new int[]{R.id.tv_search_code, R.id.tv_search_name}, 0);
-                listView.setAdapter(cursorAdapter);
+            init(intent);
+        }
+    }
+
+    public void init(Intent intent) {
+        ContentResolver contentResolver = getContentResolver();
+        Uri uri = StockProvider.CONTENT_URI;
+        cursor = contentResolver.query(uri, null, null, new String[]{intent.getStringExtra(SearchManager.QUERY)}, null);
+        if(cursor.getCount() > 0) {
+            cursorAdapter = new searchResultAdapter(SearchableStockActivity.this, R.layout.list_item_searchresult, cursor, new String[]{KEY_CODE, KEY_NAME}, new int[]{R.id.tv_search_code, R.id.tv_search_name}, 0);
+            listView.setAdapter(cursorAdapter);
 //            cursor.close();
-            }
-            else {
-                FrameLayout frameLayout = (FrameLayout) findViewById(R.id.not_searched);
-                frameLayout.setVisibility(View.VISIBLE);
-            }
+        }
+        else {
+            FrameLayout frameLayout = (FrameLayout) findViewById(R.id.not_searched);
+            frameLayout.setVisibility(View.VISIBLE);
         }
     }
 
@@ -99,6 +96,7 @@ public class SearchableStockActivity extends AppCompatActivity {
             cursor.moveToPosition(position);
             name = cursor.getString(cursor.getColumnIndex(KEY_NAME));
             code = cursor.getString(cursor.getColumnIndex(KEY_CODE));
+            gid = cursor.getString(cursor.getColumnIndex(KEY_GID));
             TextView tvName = (TextView) convertView.findViewById(R.id.tv_search_name);
             TextView tvCode = (TextView) convertView.findViewById(R.id.tv_search_code);
             tvName.setText(name);
@@ -106,7 +104,7 @@ public class SearchableStockActivity extends AppCompatActivity {
 
             ContentResolver contentResolver = getContentResolver();
             Uri uri = Uri.parse("content://" + UserShareProvider.AUTHORITY + "/userShare/" + gid);
-            cursor = contentResolver.query(uri, null, "gid = ?", new String[] {cursor.getString(cursor.getColumnIndex(KEY_GID))}, null);
+            cursor = contentResolver.query(uri, null, "gid = ?", new String[] {gid}, null);
 
             if (cursor.getCount() > 0) {
                 btn.setImageResource(R.mipmap.icon_added);

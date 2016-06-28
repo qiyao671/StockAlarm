@@ -11,4 +11,6 @@ public class ConstantValues {
     public static final String KEY_MIN_PRICE = "min";
     public static final String KEY_MAX_PERCENT = "maxPercent";
     public static final String KEY_MIN_PERCENT = "minPercent";
+    public static final String KEY_YAHOO_GID = "s";
+
 }

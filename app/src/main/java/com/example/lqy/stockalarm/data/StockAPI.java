@@ -1,5 +1,6 @@
 package com.example.lqy.stockalarm.data;
 
+import com.example.lqy.stockalarm.tools.ConstantValues;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -17,12 +18,29 @@ public class StockAPI {
     public static final String DEF_CHATSET = "UTF-8";
     public static final int DEF_CONN_TIMEOUT = 30000;
     public static final int DEF_READ_TIMEOUT = 30000;
+    public static final String YAHOO_URL = "http://table.finance.yahoo.com/table.csv";
     public static final String SINAURL = "http://hq.sinajs.cn";
     public static final String URL_SHLIST ="http://web.juhe.cn:8080/finance/stock/shall";//请求接口地址
     public static String userAgent =  "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1547.66 Safari/537.36";
 
     //配置您申请的KEY
     public static final String APPKEY ="2922ce9890eda95ccb4fde316d709a88";
+
+    public static String getShStockHistory(String gid) {
+        String code = gid.substring(2);
+        Map params = new HashMap();
+        params.put(ConstantValues.KEY_YAHOO_GID, code + ".ss");
+        String result = null;
+
+        try {
+            result = net(YAHOO_URL, params, "GET");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return result;
+    }
 
     //1.沪深股市
     public static Stock getHSStock(String gid){
@@ -56,7 +74,7 @@ public class StockAPI {
             double increase = nowPrice - yesterday;
             double increPer = increase / yesterday * 100;
 
-            Stock stock = new Stock(gid, values[0], gid.substring(0, 2));
+            Stock stock = new Stock(gid, values[0], gid.substring(2));
             stock.setOpen(values[1]);
             stock.setYesterday(values[2]);
             stock.setNowPri(values[3]);
@@ -299,6 +317,7 @@ public class StockAPI {
             String strRead = null;
             while ((strRead = reader.readLine()) != null) {
                 sb.append(strRead);
+                sb.append("\n");
             }
             rs = sb.toString();
         } catch (IOException e) {

@@ -86,6 +86,7 @@ public class UserShareListActivity extends AppCompatActivity {
                     case MSG_WHAT_UPDATE_LV:
                         adapterInfo.notifyDataSetChanged();
                         UtilTools.setListViewHeightBasedOnChildren(listViewStockInfo);
+                        Log.i("handler test", "handleMessage:  info changed");
                         break;
                     case MSG_WHAT_NETERROR:
                         Toast.makeText(UserShareListActivity.this, "网络连接错误", Toast.LENGTH_LONG).show();
@@ -120,6 +121,7 @@ public class UserShareListActivity extends AppCompatActivity {
                 getStocksInfo();
             }
         }, 0, 5000);
+        Log.i("resume_test", "onResume: timer is start");
     }
 
     @Override
@@ -194,7 +196,6 @@ public class UserShareListActivity extends AppCompatActivity {
             }
         }
 
-        Log.i("test", "getStocksInfo: ");
         sinaResultToStocks(gidList);
     }
 
@@ -241,6 +242,7 @@ public class UserShareListActivity extends AppCompatActivity {
         super.onPause();
         if (timer != null) {
             timer.cancel();
+            Log.i("pause_test", "onPause: timer is cancel");
         }
     }
 
@@ -250,6 +252,7 @@ public class UserShareListActivity extends AppCompatActivity {
         cursor.close();
         if (timer != null) {
             timer.cancel();
+            Log.i("destroy_test", "onDestroy: timer is cancel");
         }
     }
 
@@ -262,15 +265,19 @@ public class UserShareListActivity extends AppCompatActivity {
         adapterStock.swapCursor(cursor);
         adapterStock.notifyDataSetChanged();
         UtilTools.setListViewHeightBasedOnChildren(listViewStock);
-        adapterInfo.notifyDataSetChanged();
-        UtilTools.setListViewHeightBasedOnChildren(listViewStockInfo);
         if(timer!=null){
             timer.cancel();
         }
         if(cursor.getCount() > 0)
             startTimer();
-    }
 
+//        getStocksInfo();
+        adapterInfo.notifyDataSetChanged();
+        UtilTools.setListViewHeightBasedOnChildren(listViewStockInfo);
+
+
+
+    }
     public void writeDateToFile() {
         long time = getToday();
 
@@ -316,6 +323,7 @@ public class UserShareListActivity extends AppCompatActivity {
                 long today = getToday();
                 fileInputStream.close();
                 if (today > lastUpdateDay) {
+                    writeDateToFile();
                     return false;
                 }
                 else {

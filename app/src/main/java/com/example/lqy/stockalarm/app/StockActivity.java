@@ -5,6 +5,7 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -22,7 +23,14 @@ import com.example.lqy.stockalarm.contentProvider.UserShareProvider;
 import com.example.lqy.stockalarm.data.Stock;
 import com.example.lqy.stockalarm.data.StockAPI;
 import com.github.mikephil.charting.charts.CandleStickChart;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.CandleData;
+import com.github.mikephil.charting.data.CandleDataSet;
+import com.github.mikephil.charting.data.CandleEntry;
 
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -37,12 +45,13 @@ public class StockActivity extends AppCompatActivity implements View.OnTouchList
     private TextView tvNumber;
     private TextView tvAmount;
     private String gid;
+    private ArrayList<String[]> dataList;
     private boolean isUserShare;
     private static final String KEY_NOWPRI = "nowPri", KEY_INCREASE = "increase", KEY_INCREPER = "increPer"
             , KEY_HIGH = "todayMax", KEY_LOW = "todayMin", KEY_OPEN = "todayStartPri", KEY_YES = "yestodEndPri"
             , KEY_NUMBER = "traNumber", KEY_AMOUNT = "traAmount", KEY_NAME = "name", KEY_CODE = "code"
             , KEY_GID = "gid";
-    private static final int MESSAGE_UPDATE_TV = 1;
+    private static final int MESSAGE_UPDATE_TV = 1, MESSAGE_INITCHART = 2;
     private Handler handler;
     private Thread thread;
     private LinearLayout linearLayoutWarn, linearLayoutUserShare, linearLayoutNews;
@@ -51,14 +60,7 @@ public class StockActivity extends AppCompatActivity implements View.OnTouchList
     private int TAG_DELETE = 0;
     private Cursor cursor;
     private CandleStickChart chart;
-    public String strData = "Date,Open,High,Low,Close,Volume,Adj Close\n" +
-            "2016-06-24,15.70,15.79,15.08,15.28,30575500,15.28\n" +
-            "2016-06-23,15.90,15.90,15.71,15.72,12882200,15.72\n" +
-            "2016-06-22,16.1818,16.2727,16.1636,16.2636,15650200,14.31691\n" +
-            "2016-06-21,17.88,17.95,17.75,17.78,15852800,15.6518\n" +
-            "2016-06-20,17.93,17.93,17.75,17.85,9681400,15.71342\n" +
-            "2016-06-17,17.75,17.99,17.74,17.77,17412200,15.643\n" +
-            "2016-06-16,19.437,19.723,19.36,19.58,30871100,17.23635";
+    public String strData;
 //    private WebView webView;
     Timer timer;
 
@@ -68,6 +70,8 @@ public class StockActivity extends AppCompatActivity implements View.OnTouchList
         setContentView(R.layout.activity_stock);
 
         this.init();
+
+
     }
 
     @Override
@@ -150,25 +154,32 @@ public class StockActivity extends AppCompatActivity implements View.OnTouchList
             @Override
             public boolean handleMessage(Message msg) {
                 {
-                    if (msg.what == MESSAGE_UPDATE_TV){
-                        Bundle data = msg.getData();
-                        tvNowPri.setText(data.getString(KEY_NOWPRI));
-                        tvIncrease.setText(data.getString(KEY_INCREASE));
-                        tvIncrePer.setText(data.getString(KEY_INCREPER) + "%");
-                        tvHigh.setText(data.getString(KEY_HIGH));
-                        tvLow.setText(data.getString(KEY_LOW));
-                        tvOpen.setText(data.getString(KEY_OPEN));
-                        tvYes.setText(data.getString(KEY_YES));
-                        tvNumber.setText(data.getString(KEY_NUMBER));
-                        tvAmount.setText(data.getString(KEY_AMOUNT));
+                    switch (msg.what) {
+                        case MESSAGE_INITCHART:
+                            chartInit();
+                            break;
+                        case MESSAGE_UPDATE_TV:
+                            Bundle data = msg.getData();
+                            tvNowPri.setText(data.getString(KEY_NOWPRI));
+                            tvIncrease.setText(data.getString(KEY_INCREASE));
+                            tvIncrePer.setText(data.getString(KEY_INCREPER) + "%");
+                            tvHigh.setText(data.getString(KEY_HIGH));
+                            tvLow.setText(data.getString(KEY_LOW));
+                            tvOpen.setText(data.getString(KEY_OPEN));
+                            tvYes.setText(data.getString(KEY_YES));
+                            tvNumber.setText(data.getString(KEY_NUMBER));
+                            tvAmount.setText(data.getString(KEY_AMOUNT));
 
-                        Log.i("handle", data.getString(KEY_NOWPRI));
+                            Log.i("handle", data.getString(KEY_NOWPRI));
+                            break;
                     }
                 }
 
                 return  true;
             }
         });
+
+        historyStringInit();
 
         startTimer();
     }
@@ -217,13 +228,13 @@ public class StockActivity extends AppCompatActivity implements View.OnTouchList
                         linearLayoutUserShare.setTag((TAG_DELETE));
                         tv_UserShare.setText("从自选股删除");
                         linearLayoutWarn.setVisibility(View.VISIBLE);
-                        Toast.makeText(StockActivity.this, "删除成功", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(StockActivity.this, "添加成功", Toast.LENGTH_SHORT).show();
                     }
                     else {
                         deleteUserShare(gid);
                         tv_UserShare.setText("加入自选股");
                         linearLayoutWarn.setVisibility(View.GONE);
-                        Toast.makeText(StockActivity.this, "添加成功", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(StockActivity.this, "删除成功", Toast.LENGTH_SHORT).show();
                     }
                 } else if (v == linearLayoutWarn) { //提醒按钮
                     Intent intent = new Intent(StockActivity.this, WarnSettingsActivity.class);
@@ -293,6 +304,20 @@ public class StockActivity extends AppCompatActivity implements View.OnTouchList
         return contentResolver.delete(uri, null, null);
     }
 
+    public void historyStringInit() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                strData = StockAPI.getShStockHistory(gid);
+                if (strData != null) {
+                    Message msg = Message.obtain();
+                    msg.what = MESSAGE_INITCHART;
+                    handler.sendMessage(msg);
+                }
+            }
+        }).start();
+    }
+
     public void chartInit() {
         chart = (CandleStickChart) findViewById(R.id.candler_chart);
 
@@ -316,21 +341,78 @@ public class StockActivity extends AppCompatActivity implements View.OnTouchList
         chart.setScaleXEnabled(false);// if disabled, scaling can be done on  y-axis 
 //        chart.setValueTypeface(mTf);// 设置字体
 
+        dataList = getDataList();
+        chart.setData(getData(30));
+//        chart.setVisibleXRangeMaximum(40);
+//        chart.setVisibleXRange(chart.getData().getXValCount()- 41, chart.getData().getXValCount()-1);
+
+
+        chart.invalidate();
+
+        XAxis xAxis =chart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setDrawGridLines(true);
+        xAxis.setSpaceBetweenLabels(4);//轴刻度间的宽度，默认值是4
+        xAxis.setGridColor(Color.LTGRAY);//X轴刻度线颜色
+        xAxis.setTextColor(Color.LTGRAY);//X轴文字颜色
+
+        YAxis leftAxis = chart.getAxisLeft();
+        leftAxis.setEnabled(true);
+        leftAxis.setLabelCount(8,false);
+        leftAxis.setDrawGridLines(true);
+        leftAxis.setDrawAxisLine(false);
+        leftAxis.setGridColor(Color.LTGRAY);
+        leftAxis.setTextColor(Color.LTGRAY);
+//        chart.setVisibleYRangeMaximum(8, leftAxis.getAxisDependency());
+
+        YAxis rightAxis =chart.getAxisRight();
+        rightAxis.setEnabled(false);
+
+        // 设置比例图标示，就是那个一组y的value的
+        Legend mLegend = chart.getLegend();
+
+        // 沿x轴动画，时间2000毫秒。
+        chart.animateX(2000);
     }
 
-//    public void getData() {
-//        String[] dataArray = strData.split("\n");
-//
-//        ArrayList<String[]> dataList = new ArrayList<>();
-//        for (int i = 1; i < dataArray.length; i++) {
-//            String data = dataArray[i];
-//            dataList.add(data.split(","));
-//        }
-//
-//        for (int i = 0; i < dataList.size(); i++) {
-//            String[] values = dataList.get(i);
-//            CandleEntry entry = new CandleEntry(dataList.size() - 0, Float.parseFloat(values[2]), Float.parseFloat(values[3]), Float.parseFloat(values[1]), Float.parseFloat(values[4]));
-//
-//        }
-//    }
+    public ArrayList<String[]> getDataList() {
+        String[] dataArray = strData.split("\n");
+
+        dataList = new ArrayList<>();
+        for (int i = 1; i < dataArray.length; i++) {
+            String data = dataArray[i];
+            dataList.add(data.split(","));
+        }
+
+        return dataList;
+    }
+
+    public CandleData getData(int length) {
+        ArrayList<CandleEntry> yVals = new ArrayList<>();
+        ArrayList<String> xVals = new ArrayList<>();
+        for (int i = length - 1; i >= 0; i --) {
+            String[] values = dataList.get(i);
+            CandleEntry entry = new CandleEntry(length - 1 - i, Float.parseFloat(values[2]), Float.parseFloat(values[3]), Float.parseFloat(values[1]), Float.parseFloat(values[4]));
+            yVals.add(entry);
+            xVals.add(values[0]);
+        }
+
+        CandleDataSet dataSet = new CandleDataSet(yVals, "日K图");
+
+        dataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
+        dataSet.setShadowColor(Color.DKGRAY);//影线颜色
+        dataSet.setShadowColorSameAsCandle(true);//影线颜色与实体一致
+        dataSet.setShadowWidth(0.7f);//影线
+        dataSet.setIncreasingColor(Color.RED);
+        dataSet.setIncreasingPaintStyle(Paint.Style.FILL);//红涨，实体
+        dataSet.setDecreasingColor(Color.GREEN);
+        dataSet.setDecreasingPaintStyle(Paint.Style.STROKE);//绿跌，空心
+        dataSet.setNeutralColor(Color.RED);//当天价格不涨不跌（一字线）颜色
+        dataSet.setHighlightLineWidth(1f);//选中蜡烛时的线宽
+        dataSet.setDrawValues(false);//在图表中的元素上面是否显示数值
+
+        CandleData data = new CandleData(xVals, dataSet);
+
+        return data;
+    }
 }
