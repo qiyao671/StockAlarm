@@ -7,4 +7,5 @@
             android:searchSuggestIntentData="content://com.example.lqy.stockalarm.contentProvider.StockProvider/stock"
             android:searchSuggestSelection=" ?"
             android:searchSuggestThreshold="1"
+            android:voiceSearchMode="showVoiceSearchButton|launchRecognizer"
             android:includeInGlobalSearch="true" />

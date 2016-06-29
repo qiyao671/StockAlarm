@@ -8,4 +8,6 @@
     <string name="title_activity_stock">StockActivity</string>
     <string name="title_activity_warn_setting">WarnSettingActivity</string>
     <string name="title_activity_warn_settings">WarnSettingsActivity</string>
+    <string name="open_left_drawer">打开左侧侧滑栏</string>
+    <string name="close_left_drawer">关闭左侧侧滑栏</string>
 </resources>

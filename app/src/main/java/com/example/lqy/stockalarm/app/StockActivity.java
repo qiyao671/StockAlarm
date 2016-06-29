@@ -31,6 +31,7 @@ import com.github.mikephil.charting.data.CandleDataSet;
 import com.github.mikephil.charting.data.CandleEntry;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -170,6 +171,16 @@ public class StockActivity extends AppCompatActivity implements View.OnTouchList
                             tvNumber.setText(data.getString(KEY_NUMBER));
                             tvAmount.setText(data.getString(KEY_AMOUNT));
 
+                            if(Double.parseDouble(tvIncrease.getText().toString()) < 0){
+                                tvNowPri.setTextColor(getResources().getColor(R.color.green));
+                                tvIncrease.setTextColor(getResources().getColor(R.color.green));
+                                tvIncrePer.setTextColor(getResources().getColor(R.color.green));
+                            } else {
+                                tvNowPri.setTextColor(Color.RED);
+                                tvIncrease.setTextColor(Color.RED);
+                                tvIncrePer.setTextColor(Color.RED);
+                            }
+
                             Log.i("handle", data.getString(KEY_NOWPRI));
                             break;
                     }
@@ -232,6 +243,7 @@ public class StockActivity extends AppCompatActivity implements View.OnTouchList
                     }
                     else {
                         deleteUserShare(gid);
+                        linearLayoutUserShare.setTag((TAG_ADD));
                         tv_UserShare.setText("加入自选股");
                         linearLayoutWarn.setVisibility(View.GONE);
                         Toast.makeText(StockActivity.this, "删除成功", Toast.LENGTH_SHORT).show();
@@ -313,6 +325,11 @@ public class StockActivity extends AppCompatActivity implements View.OnTouchList
                     Message msg = Message.obtain();
                     msg.what = MESSAGE_INITCHART;
                     handler.sendMessage(msg);
+                    Log.i("test", "get Data");
+                }
+                else {
+                    Log.i("test", "data is null");
+                    historyStringInit();
                 }
             }
         }).start();
@@ -321,35 +338,28 @@ public class StockActivity extends AppCompatActivity implements View.OnTouchList
     public void chartInit() {
         chart = (CandleStickChart) findViewById(R.id.candler_chart);
 
-//        chart.setStartAtZero(true);
-//        chart.setDrawYValues(false); // disable the drawing of values into the chart
-        chart.setDrawBorders(false);   //是否在折线图上添加边框
+        chart.setDrawBorders(true);
+        chart.setBorderWidth(1);
+        chart.setBorderColor(Color.WHITE & 0x70FFFFFF);
+        chart.setAutoScaleMinMaxEnabled(true);
         chart.setDescription("");// 数据描述  
-        chart.setNoDataTextDescription("You need to provide data for the chart.");  //如果没有数据的时候，会显示这个，类似listview的emtpyview  
-//        chart.setDrawVerticalGrid(false); // enable / disable grid lines
-//        chart.setDrawHorizontalGrid(false);
+        chart.setNoDataTextDescription("You need to provide data for the chart.");
         chart.setDrawGridBackground(false); // 是否显示表格颜色  
         chart.setBackgroundColor(Color.DKGRAY);// 设置背景
         chart.setGridBackgroundColor(Color.DKGRAY);//设置表格背景色
-//        chart.setGridColor(Color.WHITE & 0x70FFFFFF); // 表格线的颜色，在这里是是给颜色设置一个透明度
-//        chart.setGridWidth(1.25f);// 表格线的线宽
-        chart.setTouchEnabled(true); // enable touch gestures 
+        chart.setTouchEnabled(true); // enable touch gestures
         chart.setDragEnabled(true);// 是否可以拖拽  
-        chart.setScaleEnabled(true);// 是否可以缩放  
+        chart.setScaleEnabled(false);// 是否可以缩放
         chart.setPinchZoom(false);// if disabled, scaling can be done on x- and y-axis separately  
         chart.setScaleYEnabled(false);// if disabled, scaling can be done on x-axis
         chart.setScaleXEnabled(false);// if disabled, scaling can be done on  y-axis 
-//        chart.setValueTypeface(mTf);// 设置字体
 
         dataList = getDataList();
-        chart.setData(getData(30));
-//        chart.setVisibleXRangeMaximum(40);
-//        chart.setVisibleXRange(chart.getData().getXValCount()- 41, chart.getData().getXValCount()-1);
+        chart.setData(getData(dataList.size()));
 
-
-        chart.invalidate();
 
         XAxis xAxis =chart.getXAxis();
+        xAxis.setDrawLabels(true);
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setDrawGridLines(true);
         xAxis.setSpaceBetweenLabels(4);//轴刻度间的宽度，默认值是4
@@ -369,8 +379,20 @@ public class StockActivity extends AppCompatActivity implements View.OnTouchList
         rightAxis.setEnabled(false);
 
         // 设置比例图标示，就是那个一组y的value的
-        Legend mLegend = chart.getLegend();
+        Legend legend = chart.getLegend();
+        legend.setFormSize(6f);// 字号
+        legend.setTextColor(Color.WHITE);// 颜色
 
+        List<String> labels=new ArrayList<>();
+        labels.add("红涨");
+        labels.add("绿跌");
+        List<Integer> colors=new ArrayList<>();
+        colors.add(Color.RED);
+        colors.add(Color.GREEN);
+        legend.setExtra(colors,labels);//设置标注的颜色及内容，设置的效果如下图
+
+        chart.setVisibleXRange(30, 100);
+        chart.invalidate();
         // 沿x轴动画，时间2000毫秒。
         chart.animateX(2000);
     }
@@ -410,7 +432,7 @@ public class StockActivity extends AppCompatActivity implements View.OnTouchList
         dataSet.setNeutralColor(Color.RED);//当天价格不涨不跌（一字线）颜色
         dataSet.setHighlightLineWidth(1f);//选中蜡烛时的线宽
         dataSet.setDrawValues(false);//在图表中的元素上面是否显示数值
-
+        dataSet.setDrawHorizontalHighlightIndicator(false);
         CandleData data = new CandleData(xVals, dataSet);
 
         return data;

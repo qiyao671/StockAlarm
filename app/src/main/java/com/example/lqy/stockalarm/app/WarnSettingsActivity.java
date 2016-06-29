@@ -3,12 +3,13 @@ package com.example.lqy.stockalarm.app;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -23,7 +24,7 @@ import com.example.lqy.stockalarm.tools.ConstantValues;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class WarnSettingsActivity extends AppCompatActivity {
+public class WarnSettingsActivity extends AppCompatActivity implements View.OnFocusChangeListener {
     private static final String KEY_GID = "gid", KEY_NAME = "name", KEY_PRICE = "price", KEY_INCREASE = "increase", KEY_PERCENT = "percent";
     private TextView tvName, tvPrice, tvIncrease, tvPercent;
     private String gid;
@@ -58,6 +59,8 @@ public class WarnSettingsActivity extends AppCompatActivity {
 
         tvName.setText(intent.getStringExtra(KEY_NAME));
 
+        initEditText();
+
         handler = new Handler(new Handler.Callback() {
             @Override
             public boolean handleMessage(Message msg) {
@@ -65,6 +68,16 @@ public class WarnSettingsActivity extends AppCompatActivity {
                 tvPrice.setText(data.getString((KEY_PRICE)));
                 tvIncrease.setText(data.getString(KEY_INCREASE));
                 tvPercent.setText(data.getString(KEY_PERCENT) + "%");
+                if (data.getBoolean("isRise")) {
+                    tvPercent.setTextColor(Color.RED);
+                    tvPrice.setTextColor(Color.RED);
+                    tvIncrease.setTextColor(Color.RED);
+                }
+                else {
+                    tvPercent.setTextColor(getResources().getColor(R.color.green));
+                    tvPrice.setTextColor(getResources().getColor(R.color.green));
+                    tvIncrease.setTextColor(getResources().getColor(R.color.green));
+                }
                 return true;
             }
         });
@@ -91,9 +104,6 @@ public class WarnSettingsActivity extends AppCompatActivity {
                 String[] selectionArgs = new String[] {
                         gid
                 };
-                //设置数据库内的数据
-                ContentResolver contentResolver = getContentResolver();
-                int rowNum = contentResolver.update(uri, values, selection, selectionArgs);
 
                 //开启服务
                 Intent intent = new Intent(WarnSettingsActivity.this, WarnService.class);
@@ -102,10 +112,13 @@ public class WarnSettingsActivity extends AppCompatActivity {
                 data.putDouble(ConstantValues.KEY_MAX_PRICE, Double.parseDouble(etPriceRise.getText().toString()));
                 data.putDouble(ConstantValues.KEY_MIN_PRICE, Double.parseDouble(etPriceFall.getText().toString()));
                 data.putDouble(ConstantValues.KEY_MAX_PERCENT, Double.parseDouble(etPercentRise.getText().toString()));
-                data.putDouble(ConstantValues.KEY_MIN_PERCENT, Double.parseDouble(etPercentRise.getText().toString()));
+                data.putDouble(ConstantValues.KEY_MIN_PERCENT, Double.parseDouble(etPercentFall.getText().toString()));
                 intent.putExtras(data);
                 startService(intent);
-                Log.i("update", "onClick: update" + rowNum);
+
+                //设置数据库内的数据
+                ContentResolver contentResolver = getContentResolver();
+                int rowNum = contentResolver.update(uri, values, selection, selectionArgs);
 
                 //关闭页面
                 finish();
@@ -113,6 +126,45 @@ public class WarnSettingsActivity extends AppCompatActivity {
 
         });
     }
+
+    public void initEditText() {
+        Cursor cursor;
+
+        ContentResolver contentResolver = getContentResolver();
+        cursor = contentResolver.query(UserShareProvider.CONTENT_URI, null, "gid = ?", new String[]{gid}, null);
+        cursor.moveToFirst();
+        String str;
+        etPriceRise.setTag(0);
+        etPriceFall.setTag(1);
+        etPercentRise.setTag(2);
+        etPercentFall.setTag(3);
+        etPriceRise.setOnFocusChangeListener(this);
+        etPriceFall.setOnFocusChangeListener(this);
+        etPercentRise.setOnFocusChangeListener(this);
+        etPercentFall.setOnFocusChangeListener(this);
+        if ((str = cursor.getString(cursor.getColumnIndex(ConstantValues.KEY_MAX_PRICE))) != null) {
+            etPriceRise.setText(str);
+            switchPriceRise.setChecked(true);
+        }
+
+        if ((str = cursor.getString(cursor.getColumnIndex(ConstantValues.KEY_MIN_PRICE))) != null) {
+            etPriceFall.setText(str);
+            switchPriceFall.setChecked(true);
+        }
+
+        if ((str = cursor.getString(cursor.getColumnIndex(ConstantValues.KEY_MAX_PERCENT))) != null) {
+            etPercentRise.setText(str);
+            switchPercentRise.setChecked(true);
+        }
+
+        if ((str = cursor.getString(cursor.getColumnIndex(ConstantValues.KEY_MIN_PERCENT))) != null) {
+            etPercentFall.setText(str);
+            switchPercentFall.setChecked(true);
+        }
+
+        cursor.close();
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -155,9 +207,51 @@ public class WarnSettingsActivity extends AppCompatActivity {
             data.putString(KEY_PRICE, values[1]);
             data.putString(KEY_PERCENT, String.format("%.2f",increPer));
             data.putString(KEY_INCREASE, String.format("%.2f",increase));
+            data.putBoolean("isRise", increase >= 0);
             msg.setData(data);
             handler.sendMessage(msg);
         }
     }
 
+    @Override
+    public void onFocusChange(View v, boolean hasFocus) {
+        switch ((int)v.getTag()) {
+            case 0:
+                if (hasFocus) {
+                    switchPriceRise.setChecked(true);
+                }
+                else {
+                    if (((EditText)v).getText().toString().equals(""))
+                        switchPriceRise.setChecked(false);
+                }
+                break;
+            case 1:
+                if (hasFocus) {
+                    switchPriceFall.setChecked(true);
+                }
+                else {
+                    if (((EditText)v).getText().toString().equals(""))
+                        switchPriceFall.setChecked(false);
+                }
+                break;
+            case 2:
+                if (hasFocus) {
+                    switchPercentRise.setChecked(true);
+                }
+                else {
+                    if (((EditText)v).getText().toString().equals(""))
+                        switchPercentRise.setChecked(false);
+                }
+                break;
+            case 3:
+                if (hasFocus) {
+                    switchPercentFall.setChecked(true);
+                }
+                else {
+                    if (((EditText)v).getText().toString().equals(""))
+                        switchPercentFall.setChecked(false);
+                }
+                break;
+        }
+    }
 }

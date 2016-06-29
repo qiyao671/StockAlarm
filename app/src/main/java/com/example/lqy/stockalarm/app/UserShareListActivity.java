@@ -24,6 +24,7 @@ import android.widget.SimpleAdapter;
 import android.widget.Toast;
 import com.example.lqy.design.views.SyncHorizontalScrollView;
 import com.example.lqy.stockalarm.R;
+import com.example.lqy.stockalarm.Services.WarnService;
 import com.example.lqy.stockalarm.contentProvider.StockProvider;
 import com.example.lqy.stockalarm.contentProvider.UserShareProvider;
 import com.example.lqy.stockalarm.data.StockAPI;
@@ -60,6 +61,7 @@ public class UserShareListActivity extends AppCompatActivity {
         setContentView(R.layout.activity_user_share_list);
         Toolbar toolbar = (Toolbar) findViewById(R.id.userShareToolbar);
         setSupportActionBar(toolbar);
+
 
         //初始化listview
         listViewStock = (ListView) findViewById(R.id.usrShareListView);
@@ -111,6 +113,12 @@ public class UserShareListActivity extends AppCompatActivity {
         });
 
         updateDB();
+
+        if (!WarnService.isRunning()) {
+            Intent intent = new Intent(UserShareListActivity.this, WarnService.class);
+            startService(intent);
+        }
+
     }
 
     public void startTimer() {
@@ -149,9 +157,6 @@ public class UserShareListActivity extends AppCompatActivity {
 //            return true;
 //        }
         switch (id){
-            case R.id.action_search:{
-
-            }
         }
 
         return super.onOptionsItemSelected(item);
